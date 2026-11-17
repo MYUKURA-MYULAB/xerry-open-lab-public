@@ -1,0 +1,37 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+
+# Model weights and exports
+*.pt
+*.pth
+*.bin
+*.model
+*.tokenizer
+*.safetensors
+*.gguf
+*.onnx
+*.mlmodel
+*.mlpackage
+*.mlmodelc/
+*.mlmodelc
+*.mlpackage/
+checkpoints/
+
+# Audio and local/private datasets
+*.wav
+*.mp3
+*.m4a
+*.flac
+data/raw/
+data/private/
+datasets/private/
+outputs/
+
+# Local Python/editor state
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
