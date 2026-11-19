@@ -9,6 +9,7 @@ From the repository root:
     python3 -m unittest discover -s benchmarks -p 'test_*.py'
     python3 benchmarks/evaluate_facts.py examples/synthetic-data/cases.jsonl examples/synthetic-data/scorer-demo-predictions.jsonl
     python3 benchmarks/evaluate_facts.py examples/synthetic-data-es/cases.jsonl examples/synthetic-data-es/scorer-demo-predictions.jsonl --per-case
+    python3 benchmarks/mutation_check.py
 
 Expected results on the hand-authored predictions:
 
@@ -17,7 +18,7 @@ Expected results on the hand-authored predictions:
 | `synthetic-data` (English, 4 cases) | 2 | 2 | 3 | 0.5 | 0.4 | 0.4444 | 0.75 |
 | `synthetic-data-es` (Spanish, 12 cases) | 14 | 6 | 7 | 0.7 | 0.6667 | 0.6829 | 0.9 |
 
-The 37 tests passed on Python 3.9.6 and 3.14.6. To score a model run, replace the prediction path with its JSONL output and record the model revision, prompt, decoding, runtime and hardware separately.
+The 68 tests passed on Python 3.9.6 and 3.14.6. To score a model run, replace the prediction path with its JSONL output and record the model revision, prompt, decoding, runtime and hardware separately.
 
 ## Input format
 
@@ -29,7 +30,7 @@ Each line of both files is a JSON object with `case_id` (unique string), `text` 
 - **Matching.** The five-field tuple must match exactly. Facts are compared as a multiset per case, so a predicted duplicate beyond the reference count is a false positive.
 - **Counts.** Precision, recall and F1 are micro-averaged over all cases. A fact with one wrong field counts as one false positive and one false negative.
 - **Evidence quotes.** The evidence-quote occurrence rate is the share of predicted facts whose non-empty `evidence_quote` occurs in the source text after the same folding. A missing or empty quote counts as not occurring. Occurrence is not support: the scorer does not judge whether the quote entails the fact.
-- **Empty denominators.** A metric whose denominator is zero is reported as 0.0, which is not the same as "no errors". With no predictions, precision and the quote rate print 0.0. Use `--per-case` to see the denominators.
+- **Empty data.** A metric whose denominator is zero is reported as 0.0, which is not the same as "no errors". With no predictions, precision and the quote rate print 0.0. Use `--per-case` to see the denominators. Every count is present in the output even when it is zero. A reference file with no cases is an error, not a score.
 
 ## `--per-case`
 
@@ -43,6 +44,18 @@ The flag adds two keys to the default output and leaves the other keys and value
   - `evidence_quotes_not_found`: predicted facts whose quote does not occur, reported apart from fact errors.
 
 The pairing is a diagnostic heuristic and does not alter the counts above. A wrong `concept` code appears as an omission plus an unsupported fact. Values are shown in normalized form.
+
+## Tests, controls and the mutation check
+
+| File | What it covers |
+|---|---|
+| `test_evaluate_facts.py` | The original 11 tests: scoring, input validation, command line |
+| `test_evaluator_extensions.py` | Unicode equivalence, the `--per-case` report, unchanged default output |
+| `test_spanish_battery.py` | Expected counts and error classes for the Spanish battery |
+| `test_scorer_controls.py` | Controls with known answers: ceiling, negative control, input order, normalization, evidence quotes, empty data, field errors |
+| `mutation_check.py` | Injects 11 known defects into a temporary copy of the scorer and reports which test classes catch each one |
+
+Each control class states what it verifies and what it does not. Some tests are marked as characterization: they record behavior that is arguably wrong (for example, a quote that matches part of a word still counts) so that changing it is a deliberate decision. See [research note 004](../research/004-what-validating-a-scorer-shows.md) for what these checks establish and what they leave open.
 
 ## What it does not measure
 

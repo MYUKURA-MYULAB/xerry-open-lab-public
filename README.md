@@ -17,6 +17,7 @@ We study how to evaluate evidence-grounded extraction so that these error types 
 | 3 | A downstream check that rejects unsupported facts makes extraction fail closed. | Observed once in that run; no reproducible implementation. | Public implementation tested on the battery. |
 | 4 | Splitting the pipeline into stages makes errors easier to attribute than an end-to-end system. | None. | Same inputs through staged and end-to-end systems. |
 | 5 | Local execution can meet data-control constraints at acceptable quality and cost. | The internal run executed on a phone; no latency or memory claim. | Benchmark on a fixed device and runtime. |
+| 6 | Processing a long recording in chunks recognizes speech better than a single pass. | One scripted recording, twelve identical runs ([note 003](research/003-one-recording-repeated-runs.md)): shows determinism, not independence; no error rate is reported. | Held-out recordings from other speakers, with a paired analysis. |
 
 ## 3. The experiment available here
 
@@ -29,8 +30,9 @@ Python 3.9 or newer; standard library only; no network, models or accelerator. F
     python3 -m unittest discover -s benchmarks -p 'test_*.py'
     python3 benchmarks/evaluate_facts.py examples/synthetic-data/cases.jsonl examples/synthetic-data/scorer-demo-predictions.jsonl --per-case
     python3 benchmarks/evaluate_facts.py examples/synthetic-data-es/cases.jsonl examples/synthetic-data-es/scorer-demo-predictions.jsonl --per-case
+    python3 benchmarks/mutation_check.py
 
-The 37 tests pass on Python 3.9.6 and 3.14.6. The scoring rules and output fields are in the [benchmark guide](benchmarks/README.md), and the evaluation protocol in [docs/evaluation-methodology.md](docs/evaluation-methodology.md).
+The 68 tests pass on Python 3.9.6 and 3.14.6, and the mutation check catches all 11 injected defects. The scoring rules and output fields are in the [benchmark guide](benchmarks/README.md), and the evaluation protocol in [docs/evaluation-methodology.md](docs/evaluation-methodology.md).
 
 ## 5. What we observed
 
@@ -45,13 +47,16 @@ These are scorer outputs on hand-authored predictions. They measure no model.
 - The quote check passes a wrong dose whose quote occurs verbatim (`es-011`), and a correct fact with an absent quote still counts as a true positive (`es-009`).
 - The scorer cannot recognize a correction failure or a near-miss time; both look like an ordinary value or temporality error.
 - The four English cases never exercise a subject or temporality error. The Spanish set does.
-- Building the Spanish set exposed a defect: canonically equivalent accent encodings scored as an error. It is fixed and tested.
+- Writing controls for the scorer exposed three defects: accent encodings scored as errors, an empty benchmark scored as zeros with exit code 0, and missing counts in the output. All are fixed, and a mutation check shows the suite catches 11 of 11 injected defects, two of them through a single test class each ([note 004](research/004-what-validating-a-scorer-shows.md)).
+- Twelve runs of one scripted recording gave identical speech-recognition results. That shows the pipeline is deterministic, not that it is accurate on other recordings ([note 003](research/003-one-recording-repeated-runs.md)).
 - Negative result: in five short internal tests the compact extractor produced three unsupported candidates and two outputs with no claim; the evidence check rejected the three candidates in that run ([note 002](research/002-compact-extractor-negative-result.md)).
 
 ## 6. What we cannot conclude
 
 - Nothing here measures a model. The F1 values (0.44 English, 0.68 Spanish) reflect how many errors the authors planted.
 - The internal run supports no accuracy claim in either direction, its cause is not isolated, and independently reproducible task-performance metrics are not yet available for this experimental model.
+- No speech-recognition error rate is reported. The only experiment used one scripted recording, chose its configuration on that recording, and cannot be reconstructed well enough to publish a figure.
+- Passing the scorer's controls shows it follows its documented rules. It does not show agreement with experts: no human agreement study has been done.
 - Sixteen short fictional cases, one annotation pass, and the same authors for references, predictions and scorer make the validation circular. Real speech adds disfluency, overlap and transcription errors that these cases do not.
 - Nothing here addresses speech recognition, speaker attribution, an encoder comparison, document generation, or clinical validity. Do not submit patient data or identifiable audio to anything in this repository.
 - Local execution can reduce some data transfers. Privacy, security and compliance depend on the whole deployment.
@@ -61,19 +66,20 @@ These are scorer outputs on hand-authored predictions. They measure no model.
 All of these are proposed; none is implemented here.
 
 1. **External baseline.** An openly licensed compact model, labeled as not Xerry, on the Spanish battery with fixed prompts and decoding, scored per phenomenon ([note 001](research/001-structured-fact-evaluation.md#next-experiment-proposed-not-executed)).
-2. **Controlled diagnosis of the internal extractor,** varying model, prompt and decoding, tokenizer and export one at a time ([note 002](research/002-compact-extractor-negative-result.md#next-diagnostic-proposed-not-executed)).
-3. **A larger battery** of about 100 cases with two annotators and per-field agreement.
-4. **Open questions:** a specialized ASR stage, an encoder against a generator for extraction, document generation from accepted facts only, and end-to-end traceability.
+2. **Controlled diagnosis of the internal extractor,** varying model, prompt and decoding, tokenizer and export one at a time ([note 002](research/002-compact-extractor-negative-result.md#next-experiment-proposed-not-executed)).
+3. **A larger battery** of about 100 cases with two annotators and per-field agreement, and a human-agreement study of the scorer's equivalence decisions ([note 004](research/004-what-validating-a-scorer-shows.md#next-experiment-proposed-not-executed)).
+4. **A held-out speech-recognition comparison** of chunked against single-pass processing, with recordings split by speaker ([note 003](research/003-one-recording-repeated-runs.md#next-experiment-proposed-not-executed)).
+5. **Open questions:** a specialized ASR stage, an encoder against a generator for extraction, document generation from accepted facts only, and end-to-end traceability.
 
 ## Repository map
 
 | Path | Content |
 |---|---|
-| `research/` | Note 001 (scorer validation) and note 002 (negative result) |
-| `benchmarks/` | Fact scorer, its tests and the [benchmark guide](benchmarks/README.md) |
+| `research/` | Notes 001 (scorer on hand-authored predictions), 002 (negative result), 003 (repeated runs of one recording), 004 (what scorer validation shows) |
+| `benchmarks/` | Fact scorer, its tests and controls, a mutation check, and the [benchmark guide](benchmarks/README.md) |
 | `examples/synthetic-data/` | Four English fictional cases and hand-authored predictions |
 | `examples/synthetic-data-es/` | Twelve Spanish fictional cases and hand-authored predictions |
-| `docs/` | [Architecture](docs/architecture.md) and [evaluation methodology](docs/evaluation-methodology.md) |
+| `docs/` | [Architecture](docs/architecture.md), [evaluation methodology](docs/evaluation-methodology.md) and [data governance decisions](docs/data-governance.md) |
 | `models/model-cards/` | A bounded card for one experimental model; no model files |
 | `LICENSE`, `NOTICE` | Apache License 2.0 and attribution notice |
 

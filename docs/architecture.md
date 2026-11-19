@@ -43,7 +43,7 @@ Solid arrows show the intended data flow. Dotted arrows are an alternative path 
 | Synthetic cases | Implemented | Four English and twelve Spanish fictional cases with hand-authored predictions |
 | Compact extractor | Executed internally | A [model card](../models/model-cards/xerry-extract-010a-e2.md) and a [negative-result note](../research/002-compact-extractor-negative-result.md); no model files |
 | Evidence check | Executed internally | Described in note 002; no implementation |
-| Specialized ASR, speaker attribution | Proposed | Nothing; interface contract below |
+| Specialized ASR, speaker attribution | Proposed | Nothing; interface contract below. A third-party recognition model was run internally on one recording ([note 003](../research/003-one-recording-repeated-runs.md)); no specialized ASR exists |
 | Encoder-based extractor | Proposed | Nothing; the comparison is an open question |
 | Document generation, human review | Proposed | Nothing; interface contract below |
 | Traceability, modular deployment | Proposed | Nothing |
