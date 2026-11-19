@@ -16,7 +16,7 @@ Research on compact extraction, abstention, evidence grounding, and local infere
 
 ## Evidence and limitations
 
-In the internal synthetic fixtures, the model emitted unsupported candidate strings or no claim, and the evidence guard accepted none. This is a negative result from a small fixture set, not a statistically representative benchmark.
+In the internal synthetic fixtures, the model emitted unsupported candidate strings or no claim, and the evidence guard accepted none. This is a negative result from a small fixture set, not a statistically representative benchmark. See [research note 002](../../research/002-compact-extractor-negative-result.md).
 
 Independently reproducible task-performance metrics are not yet available for this experimental model. No precision, recall, F1, clinical-validity, or generalization result is reported here.
 

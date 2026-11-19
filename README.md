@@ -1,69 +1,81 @@
 # Xerry Open Lab
 
-Xerry Open Lab is a research workspace for compact, task-specific AI, local inference, evidence-grounded extraction, and evaluation. It asks whether modular models can make useful systems more inspectable and practical on constrained infrastructure.
+Xerry Open Lab is a research workspace on compact, task-specific models for speech-to-document pipelines, centered on evidence-grounded fact extraction. This repository publishes what can be inspected and rerun today: a strict fact scorer, two fictional benchmark sets (English and Spanish), a protocol-validation note, and one negative result from an internal experiment. It contains no model, tokenizer, training data or inference runner.
 
-This is an experimental research draft, not a clinical system. It contains documentation, four fictional evaluation cases (synthetic material, not real clinical data), hand-authored scorer input, and a standard-library scoring utility. It contains no trained weights, tokenizers, adapters, datasets, audio, product code, or model inference runner.
+## 1. The scientific problem
 
-## Research questions
+In a pipeline from audio to a clinical-style document, a wrong output can come from transcription, speaker attribution, extraction or drafting, and the errors do not weigh the same. Omitting a fact, inverting its polarity ("no fever" becomes "fever"), attributing a relative's condition to the patient, shifting its time, or keeping a value the speaker had just corrected each change what the document says. Aggregate scores hide which of these happened.
 
-- Can compact models perform narrow extraction tasks with useful quality, latency, and memory trade-offs?
-- How should speech recognition, speaker attribution, fact extraction, and note generation be evaluated as distinct stages?
-- Can systems retain evidence, subject, polarity, time, and correction history?
-- When can local execution help with data-control requirements, and what governance remains necessary?
+We study how to evaluate evidence-grounded extraction so that these error types stay separable, starting with Spanish clinical-style text, and whether small task-specific models on local hardware can meet that bar under data-governance constraints.
 
-See the [reference architecture](docs/architecture.md), the [evaluation methodology](docs/evaluation-methodology.md), and the [benchmark guide](benchmarks/README.md).
+## 2. Working hypotheses
 
-## Motivation and hypotheses
+| # | Hypothesis | Evidence available here | Pending test |
+|---|---|---|---|
+| 1 | A strict tuple scorer with an evidence-quote check separates omissions, field errors, unsupported facts and evidence failures. | [Note 001](research/001-structured-fact-evaluation.md): holds on 16 hand-authored cases, by construction, and shows where it fails. | Score real model output; two-annotator agreement. |
+| 2 | A compact task-specific extractor can reach useful quality on a restricted fact schema. | One internal run accepted no facts ([note 002](research/002-compact-extractor-negative-result.md)). No metrics. | External baseline on the Spanish battery, then a locked test set. |
+| 3 | A downstream check that rejects unsupported facts makes extraction fail closed. | Observed once in that run; no reproducible implementation. | Public implementation tested on the battery. |
+| 4 | Splitting the pipeline into stages makes errors easier to attribute than an end-to-end system. | None. | Same inputs through staged and end-to-end systems. |
+| 5 | Local execution can meet data-control constraints at acceptable quality and cost. | The internal run executed on a phone; no latency or memory claim. | Benchmark on a fixed device and runtime. |
 
-Organizations may face data-governance constraints, limited connectivity, or limited budgets for accelerator infrastructure. Small, specialized models with explicit control components might support narrow language and speech tasks on infrastructure that is easier to operate locally than a large general-purpose model. Local execution can reduce some data transfers; it does not by itself provide privacy, security, or legal compliance.
+## 3. The experiment available here
 
-These are hypotheses, not findings. Dividing work into narrower stages may improve controllability, cost, traceability, or deployment options, but the benefit depends on the task, the integration, and the hardware, and modular systems add integration errors and latency.
+The experiment that can be rerun validates the metric, not a model. It asks whether the scorer distinguishes the error types above, using sixteen fictional cases (four English, twelve Spanish) whose predictions were written by hand with planted errors. The architecture page marks every component as implemented, executed internally, or proposed: [docs/architecture.md](docs/architecture.md).
 
-## What has been done and what is hypothesized
+## 4. Reproduce
 
-| Item | Status |
-|---|---|
-| Fact scorer and its 11 unit tests | Implemented; reproducible from this repository |
-| Four fictional cases and hand-authored predictions | Provided; they demonstrate the scorer only |
-| One small on-device experiment with an experimental model (see the [model card](models/model-cards/xerry-extract-010a-e2.md)) | Executed internally; not reproducible from this repository; negative result on a small synthetic fixture set |
-| Task quality of compact extraction models | Hypothesis; independently reproducible metrics are not yet available |
-| Speech recognition and speaker attribution stages | Design only; not implemented here |
-| Modular versus end-to-end systems; encoder versus generator | Hypothesis; not tested here |
-| Quality, latency, and memory of local execution | Hypothesis; no benchmark is reproducible here |
+Python 3.9 or newer; standard library only; no network, models or accelerator. From the repository root:
 
-## What is included
+    python3 -m unittest discover -s benchmarks -p 'test_*.py'
+    python3 benchmarks/evaluate_facts.py examples/synthetic-data/cases.jsonl examples/synthetic-data/scorer-demo-predictions.jsonl --per-case
+    python3 benchmarks/evaluate_facts.py examples/synthetic-data-es/cases.jsonl examples/synthetic-data-es/scorer-demo-predictions.jsonl --per-case
+
+The 37 tests pass on Python 3.9.6 and 3.14.6. The scoring rules and output fields are in the [benchmark guide](benchmarks/README.md), and the evaluation protocol in [docs/evaluation-methodology.md](docs/evaluation-methodology.md).
+
+## 5. What we observed
+
+| Set | Cases | Reference facts | TP | FP | FN | Precision | Recall | F1 | Quote occurrence | Error events |
+|---|---|---|---|---|---|---|---|---|---|---|
+| English | 4 | 5 | 2 | 2 | 3 | 0.5 | 0.4 | 0.4444 | 0.75 | 3 |
+| Spanish | 12 | 21 | 14 | 6 | 7 | 0.7 | 0.6667 | 0.6829 | 0.90 | 8 |
+
+These are scorer outputs on hand-authored predictions. They measure no model.
+
+- One wrong field costs one false positive and one false negative, so the 8 error events in the Spanish set appear as 13 false counts.
+- The quote check passes a wrong dose whose quote occurs verbatim (`es-011`), and a correct fact with an absent quote still counts as a true positive (`es-009`).
+- The scorer cannot recognize a correction failure or a near-miss time; both look like an ordinary value or temporality error.
+- The four English cases never exercise a subject or temporality error. The Spanish set does.
+- Building the Spanish set exposed a defect: canonically equivalent accent encodings scored as an error. It is fixed and tested.
+- Negative result: the internal compact-extractor run accepted no facts on its synthetic fixtures, and the evidence check rejected the unsupported ones ([note 002](research/002-compact-extractor-negative-result.md)).
+
+## 6. What we cannot conclude
+
+- Nothing here measures a model. The F1 values (0.44 English, 0.68 Spanish) reflect how many errors the authors planted.
+- The internal run supports no accuracy claim in either direction, its cause is not isolated, and independently reproducible task-performance metrics are not yet available for this experimental model.
+- Sixteen short fictional cases, one annotation pass, and the same authors for references, predictions and scorer make the validation circular. Real speech adds disfluency, overlap and transcription errors that these cases do not.
+- Nothing here addresses speech recognition, speaker attribution, an encoder comparison, document generation, or clinical validity. Do not submit patient data or identifiable audio to anything in this repository.
+- Local execution can reduce some data transfers. Privacy, security and compliance depend on the whole deployment.
+
+## 7. Next research lines
+
+All of these are proposed; none is implemented here.
+
+1. **External baseline.** An openly licensed compact model, labeled as not Xerry, on the Spanish battery with fixed prompts and decoding, scored per phenomenon ([note 001](research/001-structured-fact-evaluation.md#next-experiment-proposed-not-executed)).
+2. **Controlled diagnosis of the internal extractor,** varying model, prompt and decoding, tokenizer and export one at a time ([note 002](research/002-compact-extractor-negative-result.md#next-diagnostic-proposed-not-executed)).
+3. **A larger battery** of about 100 cases with two annotators and per-field agreement.
+4. **Open questions:** a specialized ASR stage, an encoder against a generator for extraction, document generation from accepted facts only, and end-to-end traceability.
+
+## Repository map
 
 | Path | Content |
 |---|---|
-| `docs/architecture.md` | General modular reference architecture and stage interfaces |
-| `docs/evaluation-methodology.md` | Evaluation units and protocol requirements |
-| `benchmarks/` | Standard-library fact scorer and its automated tests |
-| `examples/synthetic-data/` | Four fictional cases and a hand-authored prediction file; synthetic material, not real clinical data |
-| `models/model-cards/` | A bounded research card for one experimental model; no model files |
+| `research/` | Note 001 (scorer validation) and note 002 (negative result) |
+| `benchmarks/` | Fact scorer, its tests and the [benchmark guide](benchmarks/README.md) |
+| `examples/synthetic-data/` | Four English fictional cases and hand-authored predictions |
+| `examples/synthetic-data-es/` | Twelve Spanish fictional cases and hand-authored predictions |
+| `docs/` | [Architecture](docs/architecture.md) and [evaluation methodology](docs/evaluation-methodology.md) |
+| `models/model-cards/` | A bounded card for one experimental model; no model files |
 | `LICENSE`, `NOTICE` | Apache License 2.0 and attribution notice |
-
-## What can be reproduced
-
-A researcher can reproduce the scoring of four fictional reference cases against a hand-authored prediction file. That file intentionally includes omissions and incorrect facts. It demonstrates the evaluator only: its predictions were not generated by an AI model.
-
-No Xerry or external model inference, training, speech recognition, or device benchmark is reproducible from this repository. There are no independently verified accuracy, WER, DER, or clinical-validity results here, and independently reproducible task-performance metrics are not yet available for this experimental model.
-
-## Run the scorer and its tests
-
-Use Python 3.9 or newer. The scorer and test suite use only the standard library. No package installation, network access, model download, or accelerator is needed. From the repository root:
-
-    python3 -m unittest discover -s benchmarks -p 'test_*.py'
-    python3 benchmarks/evaluate_facts.py examples/synthetic-data/cases.jsonl examples/synthetic-data/scorer-demo-predictions.jsonl
-
-The included hand-authored demonstration should report 2 true positives, 2 false positives, 3 false negatives, precision 0.5, recall 0.4, F1 about 0.4444, and evidence-quote occurrence 0.75. See the [benchmark guide](benchmarks/README.md) before scoring external predictions.
-
-## Limitations and governance
-
-Xerry is a research family, not a clinically validated product. Local execution can reduce some data transfers; it does not by itself guarantee privacy, security, or regulatory compliance. Real-world use would require appropriate governance, independent evaluation, and human oversight.
-
-The four demonstration cases are written in English for readability and the scorer is language-agnostic. The experimental model card concerns Spanish-language text, and no Spanish-language evaluation data is included.
-
-Do not submit or score patient data, identifiable audio, credentials, or customer material with anything in this repository.
 
 ## License
 
