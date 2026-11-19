@@ -7,7 +7,7 @@ XERRY_EXTRACT_010A_E2 is an experimental compact model (roughly 80.9 million par
 ## Status
 
 - The checkpoint exists internally and is not distributed. No weights, tokenizer, adapters, training data, training code, or exported packages are included in this repository.
-- One small on-device experiment on a phone was documented internally. On its synthetic fixtures, no candidate claim was accepted after a downstream evidence check.
+- One small on-device experiment on a phone was documented internally. On five short test fixtures, no candidate claim was accepted after a downstream evidence check.
 - Export lineage and training provenance have not been independently confirmed.
 
 ## Intended use
@@ -16,7 +16,7 @@ Research on compact extraction, abstention, evidence grounding, and local infere
 
 ## Evidence and limitations
 
-In the internal synthetic fixtures, the model emitted unsupported candidate strings or no claim, and the evidence guard accepted none. This is a negative result from a small fixture set, not a statistically representative benchmark. See [research note 002](../../research/002-compact-extractor-negative-result.md).
+In those five tests the model produced three unsupported candidates and two outputs with no claim, and the evidence check rejected the three candidates in that run. This is a negative result from a handful of tests, not a benchmark. See [research note 002](../../research/002-compact-extractor-negative-result.md).
 
 Independently reproducible task-performance metrics are not yet available for this experimental model. No precision, recall, F1, clinical-validity, or generalization result is reported here.
 

@@ -46,7 +46,7 @@ These are scorer outputs on hand-authored predictions. They measure no model.
 - The scorer cannot recognize a correction failure or a near-miss time; both look like an ordinary value or temporality error.
 - The four English cases never exercise a subject or temporality error. The Spanish set does.
 - Building the Spanish set exposed a defect: canonically equivalent accent encodings scored as an error. It is fixed and tested.
-- Negative result: the internal compact-extractor run accepted no facts on its synthetic fixtures, and the evidence check rejected the unsupported ones ([note 002](research/002-compact-extractor-negative-result.md)).
+- Negative result: in five short internal tests the compact extractor produced three unsupported candidates and two outputs with no claim; the evidence check rejected the three candidates in that run ([note 002](research/002-compact-extractor-negative-result.md)).
 
 ## 6. What we cannot conclude
 
