@@ -80,12 +80,28 @@ def quote_occurs(fact, text):
 
 
 def score(references, predictions):
+    if not references:
+        raise ValueError(
+            "reference file contains no cases; refusing to score an empty benchmark"
+        )
     if references.keys() != predictions.keys():
         missing = sorted(references.keys() - predictions.keys())
         extra = sorted(predictions.keys() - references.keys())
         raise ValueError(f"case_id mismatch; missing predictions={missing}, extra={extra}")
 
-    totals = Counter()
+    # Every count is present in the output even when it is zero.
+    totals = Counter(
+        {
+            key: 0
+            for key in (
+                "true_positive",
+                "false_positive",
+                "false_negative",
+                "predictions",
+                "evidence_quote_occurrences",
+            )
+        }
+    )
     for case_id, reference in references.items():
         prediction = predictions[case_id]
         if reference["text"] != prediction["text"]:
