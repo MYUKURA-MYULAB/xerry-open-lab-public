@@ -1,4 +1,4 @@
-# 003: One scripted recording, twelve identical runs
+# 003: One scripted recording, twelve passes with identical recorded results
 
 **Type:** methodological analysis of an internal experiment. **Status:** summarized from internal engineering records (August and November 2026) that are not published. **Not reproducible from this repository:** no audio, script, transcript, configuration, error values or timings are released, and the error values are withheld because the method that produced them cannot be reconstructed from the available records. This note does not report a benchmark, and its findings do not generalize to other recordings.
 
@@ -19,6 +19,8 @@ The model is a third-party, quantized recognition model, not a Xerry model. It r
 | Comparison | The same recording was processed in fixed-length chunks and as a single pass, and the transcription error of the two was compared. |
 | Repeats | On 17 August 2026, ten full passes: five under each of two device power settings, run as two blocks, the second on a warmer device. In November 2026, two more passes on an isolated copy of the scripts. Twelve passes in total. |
 
+**What "twelve passes" means.** They are twelve passes over the same recording. They are not twelve independent experiments, and their conditions were not necessarily identical: two device power settings, a cold and a warmer device, an isolated copy of the scripts in November, and a pipeline that changed between August and November. What was identical is the recorded result.
+
 ## What is and is not recoverable
 
 | Element | State |
@@ -32,18 +34,18 @@ The model is a third-party, quantized recognition model, not a Xerry model. It r
 
 ## Observations
 
-1. The transcription-error measure and the number of output segments were identical in all twelve passes, under both power settings.
+1. The transcription-error measure and the number of output segments were recorded as identical in all twelve passes, under both power settings, although the conditions differed as described above.
 2. In each pass the internal record reports lower error for chunked processing than for single-pass processing. The records do not give a measure of uncertainty, and the difference is a small number of words in a script of a few hundred words.
 3. The adopted configuration was selected on the same recording that was later used to report error.
 4. Run times differ between the August and November entries. The records attribute this, without verification, to a later change in another stage. A separate internal audit states that the error values were not re-measured under the later configuration, so the records disagree on whether the November passes used it.
 
 ## Interpretation
 
-**Technical repeatability is not generalization.** The twelve passes show that, for one input and one configuration, this pipeline is deterministic, and that the two power settings did not change the transcript. That is useful for auditing and regression testing. It says nothing about other recordings, because a deterministic procedure repeated on the same input has zero variance by construction.
+**Technical repeatability is not generalization.** The recorded results do not vary across twelve passes whose conditions differed in the ways listed above, and the two power settings did not change the recorded result. That is consistent with a deterministic pipeline and useful for auditing and regression testing. It does not prove determinism, because the records do not show that everything else was held fixed (see observation 4). It says nothing about other recordings: a deterministic procedure repeated on the same input has zero variance by construction.
 
 | What is repeated | What it can test | Done here |
 |---|---|---|
-| Same recording, same settings | Determinism of the pipeline | Yes, twelve passes |
+| Same recording, processed again | Whether the recorded result varies between passes | Yes: twelve passes, under conditions that differed |
 | Same recording, other device setting | Whether the setting changes the output | Yes, for this recording |
 | Other recordings, same readers | Sensitivity to content | No |
 | Other speakers, noise, speaking styles | Whether the result generalizes | No |

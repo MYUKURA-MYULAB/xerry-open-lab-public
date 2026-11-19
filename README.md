@@ -17,7 +17,7 @@ We study how to evaluate evidence-grounded extraction so that these error types 
 | 3 | A downstream check that rejects unsupported facts makes extraction fail closed. | Observed once in that run; no reproducible implementation. | Public implementation tested on the battery. |
 | 4 | Splitting the pipeline into stages makes errors easier to attribute than an end-to-end system. | None. | Same inputs through staged and end-to-end systems. |
 | 5 | Local execution can meet data-control constraints at acceptable quality and cost. | The internal run executed on a phone; no latency or memory claim. | Benchmark on a fixed device and runtime. |
-| 6 | Processing a long recording in chunks recognizes speech better than a single pass. | One scripted recording, twelve identical runs ([note 003](research/003-one-recording-repeated-runs.md)): shows determinism, not independence; no error rate is reported. | Held-out recordings from other speakers, with a paired analysis. |
+| 6 | Processing a long recording in chunks recognizes speech better than a single pass. | One scripted recording, twelve passes with identical recorded results ([note 003](research/003-one-recording-repeated-runs.md)): repeats of one input, not independent experiments; no error rate is reported. | Held-out recordings from other speakers, with a paired analysis. |
 
 ## 3. The experiment available here
 
@@ -48,7 +48,7 @@ These are scorer outputs on hand-authored predictions. They measure no model.
 - The scorer cannot recognize a correction failure or a near-miss time; both look like an ordinary value or temporality error.
 - The four English cases never exercise a subject or temporality error. The Spanish set does.
 - Writing controls for the scorer exposed three defects: accent encodings scored as errors, an empty benchmark scored as zeros with exit code 0, and missing counts in the output. All are fixed, and a mutation check shows the suite catches 11 of 11 injected defects, two of them through a single test class each ([note 004](research/004-what-validating-a-scorer-shows.md)).
-- Twelve runs of one scripted recording gave identical speech-recognition results. That shows the pipeline is deterministic, not that it is accurate on other recordings ([note 003](research/003-one-recording-repeated-runs.md)).
+- Twelve passes over one scripted recording were recorded with identical speech-recognition results. They are repeats of one input under conditions that were not necessarily identical, not independent experiments, so they say nothing about accuracy on other recordings ([note 003](research/003-one-recording-repeated-runs.md)).
 - Negative result: in five short internal tests the compact extractor produced three unsupported candidates and two outputs with no claim; the evidence check rejected the three candidates in that run ([note 002](research/002-compact-extractor-negative-result.md)).
 
 ## 6. What we cannot conclude
