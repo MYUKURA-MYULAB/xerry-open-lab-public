@@ -27,7 +27,7 @@ Do not use training or validation loss as a substitute for task metrics. Do not 
 
 ## Synthetic benchmark in this repository
 
-The included cases are fictional protocol examples, not a representative clinical dataset. A hand-authored prediction file is included to exercise the scorer; it is not model output. The scorer reports strict fact precision, recall, F1, and whether predicted evidence quotes occur in the input text. It does not judge whether a label is clinically correct or whether a quote semantically supports the fact.
+The included cases (four English, twelve Spanish) are fictional protocol examples, not a representative clinical dataset. Each set has a hand-authored prediction file that exercises the scorer; it is not model output. The scorer reports strict fact precision, recall, F1, and whether predicted evidence quotes occur in the input text. Because one wrong field counts as one false positive and one false negative, report classified error events (`--per-case`) alongside these counts. The scorer does not judge whether a label is clinically correct or whether a quote semantically supports the fact. See [research note 001](../research/001-structured-fact-evaluation.md).
 
 A serious evaluation needs expert-reviewed annotation guidance, independently reviewed cases, representative languages and conditions, and a separate locked test set. It should report errors that could change subject, negation, time, dose, or certainty.
 
